@@ -35,6 +35,8 @@ async def is_subscribed(bot, query, channel):
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
+    client = bot
+    message = update
     if AUTH_CHANNEL:
         try:
             btn = await is_subscribed(client, message, AUTH_CHANNEL)
@@ -1431,6 +1433,7 @@ async def purge_requests(client, message):
             parse_mode=enums.ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
+
 
 
 
