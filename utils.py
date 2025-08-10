@@ -70,7 +70,7 @@ async def is_subscribed(bot, query):
                 return True
             else:
                 try:
-                    user_data = await bot.get_chat_member(AUTH_CHANNEL, query.from_user.id)
+                    user_data = await bot.get_chat_member(AUTH_CHANNELS, query.from_user.id)
                 except UserNotParticipant:
                     pass
                 except Exception as e:
@@ -83,7 +83,7 @@ async def is_subscribed(bot, query):
             return False
     else:
         try:
-            user = await bot.get_chat_member(AUTH_CHANNEL, query.from_user.id)
+            user = await bot.get_chat_member(AUTH_CHANNELS, query.from_user.id)
         except UserNotParticipant:
             pass
         except Exception as e:
@@ -736,3 +736,4 @@ async def get_seconds(time_string):
         return value * 86400 * 365
     else:
         return 0
+
