@@ -7,7 +7,7 @@ from info import *
 from imdb import Cinemagoer 
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram import enums
-from pyrogram.errors import *
+from pyrogram.errors import UserNotParticipant
 from typing import Union
 from Script import script
 from datetime import datetime, date
@@ -47,51 +47,56 @@ class temp(object):
     SETTINGS = {}
     IMDB_CAP = {}
 
-
-async def pub_is_subscribed(bot, query, channel):
+# Get subscription buttons for missing channels
+async def pub_is_subscribed(bot, query, channels):
     btn = []
-    for id in channel:
-        chat = await bot.get_chat(int(id))
+    for ch_id in channels:
+        chat = await bot.get_chat(int(ch_id))
         try:
-            await bot.get_chat_member(id, query.from_user.id)
+            await bot.get_chat_member(ch_id, query.from_user.id)
         except UserNotParticipant:
-            btn.append(
-                [InlineKeyboardButton(f'Join {chat.title}', url=chat.invite_link)]
-            )
-        except Exception as e:
+            invite_link = chat.invite_link or await bot.export_chat_invite_link(ch_id)
+            btn.append([InlineKeyboardButton(f'Join {chat.title}', url=invite_link)])
+        except Exception:
             pass
     return btn
 
+
+# Check if user is subscribed to all channels
 async def is_subscribed(bot, query):
-    if REQUEST_TO_JOIN_MODE == True and join_db().isActive():
+    # Request-to-join logic
+    if REQUEST_TO_JOIN_MODE and join_db().isActive():
         try:
             user = await join_db().get_user(query.from_user.id)
             if user and user["user_id"] == query.from_user.id:
                 return True
-            else:
+            # Fall back to checking each channel
+            for ch_id in AUTH_CHANNELS:
                 try:
-                    user_data = await bot.get_chat_member(AUTH_CHANNELS, query.from_user.id)
+                    user_data = await bot.get_chat_member(ch_id, query.from_user.id)
+                    if user_data.status == enums.ChatMemberStatus.BANNED:
+                        return False
                 except UserNotParticipant:
+                    return False
+                except Exception:
                     pass
-                except Exception as e:
-                    logger.exception(e)
-                else:
-                    if user_data.status != enums.ChatMemberStatus.BANNED:
-                        return True
-        except Exception as e:
-            logger.exception(e)
+            return True
+        except Exception:
             return False
+
+    # Standard check
     else:
-        try:
-            user = await bot.get_chat_member(AUTH_CHANNELS, query.from_user.id)
-        except UserNotParticipant:
-            pass
-        except Exception as e:
-            logger.exception(e)
-        else:
-            if user.status != enums.ChatMemberStatus.BANNED:
-                return True
-        return False
+        for ch_id in AUTH_CHANNELS:
+            try:
+                user = await bot.get_chat_member(ch_id, query.from_user.id)
+                if user.status == enums.ChatMemberStatus.BANNED:
+                    return False
+            except UserNotParticipant:
+                return False
+            except Exception:
+                pass
+        return True
+
 
 async def get_poster(query, bulk=False, id=False, file=None):
     if not id:
@@ -736,4 +741,5 @@ async def get_seconds(time_string):
         return value * 86400 * 365
     else:
         return 0
+
 
