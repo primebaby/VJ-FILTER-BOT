@@ -38,7 +38,7 @@ async def answer(bot, query):
         )
         return
 
-    if AUTH_CHANNEL and not await is_subscribed(bot, query):
+    if AUTH_CHANNELS and not await is_subscribed(bot, query):
         await query.answer(
             results=[],
             cache_time=0,
@@ -118,6 +118,7 @@ def get_reply_markup(query):
         InlineKeyboardButton('Search again', switch_inline_query_current_chat=query)
     ]]
     return InlineKeyboardMarkup(buttons)
+
 
 
 
