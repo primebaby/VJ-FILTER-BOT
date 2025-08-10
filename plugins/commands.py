@@ -27,6 +27,8 @@ async def start(client, message):
         await message.react(emoji=random.choice(REACTIONS), big=True)
     except:
         pass
+
+    # Group / Supergroup Start
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [[
             InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
@@ -37,22 +39,29 @@ async def start(client, message):
             InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
         ]]
         reply_markup = InlineKeyboardMarkup(buttons)
-        await message.reply(script.START_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup, disable_web_page_preview=True)
-        await asyncio.sleep(2) # 😢 https://github.com/EvamariaTG/EvaMaria/blob/master/plugins/p_ttishow.py#L17 😬 wait a bit, before checking.
+        await message.reply(
+            script.START_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True
+        )
+        await asyncio.sleep(2)
         if not await db.get_chat(message.chat.id):
-            total=await client.get_chat_members_count(message.chat.id)
-            await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))       
+            total = await client.get_chat_members_count(message.chat.id)
+            await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))
             await db.add_chat(message.chat.id, message.chat.title)
-        return 
+        return
+
+    # Private Chat Start
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
         await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
+
     if len(message.command) != 2:
-        if PREMIUM_AND_REFERAL_MODE == True:
+        if PREMIUM_AND_REFERAL_MODE:
             buttons = [[
                 InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
             ],[
-                InlineKeyboardButton('Bᴇꜱᴛ Dᴇᴀʟꜱ 🛒', url=f'https://t.me/amazon_flipkartt_offers'),
+                InlineKeyboardButton('Bᴇꜱᴛ Dᴇᴀʟꜱ 🛒', url='https://t.me/amazon_flipkartt_offers'),
                 InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
             ],[
                 InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'),
@@ -66,7 +75,7 @@ async def start(client, message):
             buttons = [[
                 InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
             ],[
-                InlineKeyboardButton('Bᴇꜱᴛ Dᴇᴀʟꜱ 🛒', url=f'https://t.me/amazon_flipkartt_offers'),
+                InlineKeyboardButton('Bᴇꜱᴛ Dᴇᴀʟꜱ 🛒', url='https://t.me/amazon_flipkartt_offers'),
                 InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
             ],[
                 InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'),
@@ -74,10 +83,10 @@ async def start(client, message):
             ],[
                 InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
             ]]
-        if CLONE_MODE == True:
+        if CLONE_MODE:
             buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
         reply_markup = InlineKeyboardMarkup(buttons)
-        m=await message.reply_sticker("CAACAgUAAxkBAAINkmiY5E1Qak-o_9nrVGKBj7i3yKgrAAKLAQACvdP4VRDyJ1A7DRoLNgQ") 
+        m = await message.reply_sticker("CAACAgUAAxkBAAINkmiY5E1Qak-o_9nrVGKBj7i3yKgrAAKLAQACvdP4VRDyJ1A7DRoLNgQ")
         await asyncio.sleep(1)
         await m.delete()
         await message.reply_photo(
@@ -87,22 +96,47 @@ async def start(client, message):
             parse_mode=enums.ParseMode.HTML
         )
         return
-    
-    if AUTH_CHANNEL and not await is_subscribed(client, message):
+
+    # ===============================
+    # Multi-Channel Force Subscribe (Only Missing Channels)
+    # ===============================
+    async def get_missing_channels(client, user_id):
+        missing = []
+        for channel in AUTH_CHANNELS:
+            try:
+                member = await client.get_chat_member(channel, user_id)
+                if member.status not in [
+                    enums.ChatMemberStatus.OWNER,
+                    enums.ChatMemberStatus.ADMINISTRATOR,
+                    enums.ChatMemberStatus.MEMBER
+                ]:
+                    missing.append(channel)
+            except Exception:
+                missing.append(channel)
+        return missing
+
+    missing_channels = await get_missing_channels(client, message.from_user.id)
+
+    if AUTH_CHANNELS and missing_channels:
         try:
-            if REQUEST_TO_JOIN_MODE == True:
-                invite_link = await client.create_chat_invite_link(chat_id=(int(AUTH_CHANNEL)), creates_join_request=True)
-            else:
-                invite_link = await client.create_chat_invite_link(int(AUTH_CHANNEL))
-        except Exception as e:
-            print(e)
-            await message.reply_text("Make sure Bot is admin in Forcesub channel")
-            return
-        try:
-            btn = [[InlineKeyboardButton("ʙᴀᴄᴋᴜᴘ ᴄʜᴀɴɴᴇʟ", url=invite_link.invite_link)]]
+            invite_links = []
+            for channel in missing_channels:
+                try:
+                    if REQUEST_TO_JOIN_MODE:
+                        link = await client.create_chat_invite_link(chat_id=channel, creates_join_request=True)
+                    else:
+                        link = await client.create_chat_invite_link(chat_id=channel)
+                    invite_links.append(link.invite_link)
+                except Exception as e:
+                    print(e)
+
+            btn = []
+            for i, link in enumerate(invite_links, start=1):
+                btn.append([InlineKeyboardButton(f"Join Channel {i}", url=link)])
+
             if message.command[1] != "subscribe":
-                if REQUEST_TO_JOIN_MODE == True:
-                    if TRY_AGAIN_BTN == True:
+                if REQUEST_TO_JOIN_MODE:
+                    if TRY_AGAIN_BTN:
                         try:
                             kk, file_id = message.command[1].split("_", 1)
                             btn.append([InlineKeyboardButton("↻ ᴛʀʏ ᴀɢᴀɪɴ", callback_data=f"checksub#{kk}#{file_id}")])
@@ -114,14 +148,16 @@ async def start(client, message):
                         btn.append([InlineKeyboardButton("↻ ᴛʀʏ ᴀɢᴀɪɴ", callback_data=f"checksub#{kk}#{file_id}")])
                     except (IndexError, ValueError):
                         btn.append([InlineKeyboardButton("↻ ᴛʀʏ ᴀɢᴀɪɴ", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
-            if REQUEST_TO_JOIN_MODE == True:
-                if TRY_AGAIN_BTN == True:
-                    text = "**🕵️ ʏᴏᴜ ᴅᴏ ɴᴏᴛ ᴊᴏɪɴ ᴍʏ ʙᴀᴄᴋᴜᴘ ᴄʜᴀɴɴᴇʟ ғɪʀsᴛ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ᴛʜᴇɴ ᴛʀʏ ᴀɢᴀɪɴ**"
+
+            if REQUEST_TO_JOIN_MODE:
+                if TRY_AGAIN_BTN:
+                    text = "**🕵️ Please join all required channels, then try again.**"
                 else:
                     await db.set_msg_command(message.from_user.id, com=message.command[1])
-                    text = "**🕵️ ʏᴏᴜ ᴅᴏ ɴᴏᴛ ᴊᴏɪɴ ᴍʏ ʙᴀᴄᴋᴜᴘ ᴄʜᴀɴɴᴇʟ ғɪʀsᴛ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ**"
+                    text = "**🕵️ Please join all required channels.**"
             else:
-                text = "**🕵️ ʏᴏᴜ ᴅᴏ ɴᴏᴛ ᴊᴏɪɴ ᴍʏ ʙᴀᴄᴋᴜᴘ ᴄʜᴀɴɴᴇʟ ғɪʀsᴛ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ᴛʜᴇɴ ᴛʀʏ ᴀɢᴀɪɴ**"
+                text = "**🕵️ Please join all required channels, then try again.**"
+
             await client.send_message(
                 chat_id=message.from_user.id,
                 text=text,
@@ -131,7 +167,7 @@ async def start(client, message):
             return
         except Exception as e:
             print(e)
-            return await message.reply_text("something wrong with force subscribe.")
+            return await message.reply_text("Something went wrong with force subscribe.")
             
     if len(message.command) == 2 and message.command[1] in ["subscribe", "error", "okay", "help"]:
         if PREMIUM_AND_REFERAL_MODE == True:
@@ -1405,6 +1441,7 @@ async def purge_requests(client, message):
             parse_mode=enums.ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
+
 
 
 
