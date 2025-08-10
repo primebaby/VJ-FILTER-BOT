@@ -16,6 +16,7 @@ from database.connections_mdb import active_connection
 from urllib.parse import quote_plus
 from TechVJ.util.file_properties import get_name, get_hash, get_media_file_size
 logger = logging.getLogger(__name__)
+from .fsub import get_fsub
 
 BATCH_FILES = {}
 join_db = JoinReqs
@@ -87,7 +88,7 @@ async def start(client, message):
         )
         return
     
-    if AUTH_CHANNEL and not await is_subscribed(client, message):
+    if IS_FSUB and not await get_fsub(client, message):return
         try:
             if REQUEST_TO_JOIN_MODE == True:
                 invite_link = await client.create_chat_invite_link(chat_id=(int(AUTH_CHANNEL)), creates_join_request=True)
@@ -1404,4 +1405,5 @@ async def purge_requests(client, message):
             parse_mode=enums.ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
+
 
