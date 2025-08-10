@@ -151,12 +151,12 @@ async def start(client, message):
 
             if REQUEST_TO_JOIN_MODE:
                 if TRY_AGAIN_BTN:
-                    text = "**🕵️ Please join all required channels, then try again.**"
+                    text = "**🕵️ Please Join Our All Required Channels, then Click on try again Button.\n\nమీరు ఈ క్రింద ఉన్న 2 ఛానల్స్ లో తప్పకుండా జాయిన్ అవ్వాలి.. Join అయిన తర్వాత ' Try Again ' Click చేస్తే File వస్తుంది 😊.**"
                 else:
                     await db.set_msg_command(message.from_user.id, com=message.command[1])
                     text = "**🕵️ Please join all required channels.**"
             else:
-                text = "**🕵️ Please join all required channels, then try again.**"
+                text = "**🕵️ Please join our all required channels, then Click on try again.\n\n మీరు ఈ క్రింద ఉన్న 2 ఛానల్స్ లో తప్పకుండా జాయిన్ అవ్వాలి.. Join అయిన తర్వాత ' Try Again ' Click చేస్తే File వస్తుంది 😊**"
 
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -1441,6 +1441,7 @@ async def purge_requests(client, message):
             parse_mode=enums.ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
+
 
 
 
