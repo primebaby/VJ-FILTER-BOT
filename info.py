@@ -45,6 +45,9 @@ TRY_AGAIN_BTN = bool(environ.get('TRY_AGAIN_BTN', False)) # Set True Or False (T
 # This Is Force Subscribe Channel, also known as Auth Channel 
 #auth_channel = environ.get('AUTH_CHANNEL', '-1002237171878') # give your force subscribe channel id here else leave it blan
 AUTH_CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('AUTH_CHANNELS', '-1001948532295 -1001622914589').split()]
+# Backward compatibility for old code expecting a single AUTH_CHANNEL
+AUTH_CHANNEL = AUTH_CHANNELS[0] if AUTH_CHANNELS else None
+
 
 # This Channel Is For When User Request Any File Name With command or hashtag like - /request or #request
 reqst_channel = environ.get('REQST_CHANNEL', '-1002858307046')
@@ -202,6 +205,7 @@ else:
 # Don't Remove Credit @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot @Tech_VJ
 # Ask Doubt on telegram @KingVJ01
+
 
 
 
